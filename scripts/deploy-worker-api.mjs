@@ -43,6 +43,16 @@ if (!response.ok || !payload.success) {
   throw new Error(`Cloudflare Workers API upload failed (${response.status}): ${JSON.stringify(payload.errors ?? payload)}`);
 }
 
+const workerSubdomainResponse = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/${scriptName}/subdomain`, {
+  method: "POST",
+  headers: { Authorization: `Bearer ${token}`, "content-type": "application/json" },
+  body: JSON.stringify({ enabled: true, previews_enabled: false }),
+});
+const workerSubdomainPayload = await workerSubdomainResponse.json();
+if (!workerSubdomainResponse.ok || !workerSubdomainPayload.success) {
+  throw new Error(`Cloudflare workers.dev enable failed (${workerSubdomainResponse.status}): ${JSON.stringify(workerSubdomainPayload.errors ?? workerSubdomainPayload)}`);
+}
+
 const subdomainResponse = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/subdomain`, {
   headers: { Authorization: `Bearer ${token}` },
 });
