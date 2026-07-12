@@ -13,6 +13,7 @@ const metadata = {
   main_module: "worker.mjs",
   compatibility_date: "2026-07-12",
   compatibility_flags: ["nodejs_compat"],
+  workers_dev: true,
   bindings: [
     {
       type: "plain_text",
