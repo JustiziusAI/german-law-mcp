@@ -5,11 +5,11 @@
   "description": "LLM-friendly German federal legislation MCP server powered by NeuRIS",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "build": "esbuild src/index.ts --bundle --format=esm --platform=browser --target=es2022 --outfile=dist/worker.mjs --loader:.html=text --loader:.css=text --loader:.txt=text --external:cloudflare:workers",
     "check": "tsc --noEmit",
     "test": "vitest run",
-    "docs:check": "vitest run tests/catalog.test.ts"
+    "docs:check": "vitest run tests/catalog.test.ts",
+    "deploy": "npm run build && node scripts/deploy-worker-api.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
@@ -19,8 +19,8 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260712.1",
+    "esbuild": "^0.28.1",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.10",
-    "wrangler": "^4.110.0"
+    "vitest": "^4.1.10"
   }
 }

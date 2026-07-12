@@ -1,10 +1,9 @@
 import { Hono } from "hono";
-import { setCookie, getCookie, deleteCookie } from "hono/cookie";
 import { AppError } from "./errors";
 import { handleMcp } from "./mcp/server";
 import { NeurisClient } from "./neuris/client";
 import { LegislationService } from "./neuris/service";
-import { login, register, currentUser } from "./auth/auth";
+import { siteAsset } from "./site";
 import { toolSpec } from "./tools/catalog";
 import type { Env } from "./types";
 
@@ -15,9 +14,6 @@ function jsonError(error: unknown) {
   return { body: { error: { code: appError.code, message: appError.message } }, status: appError.status as 400 | 401 | 403 | 404 | 409 | 500 | 502 | 503 };
 }
 
-function sessionOptions(maxAge: number) {
-  return { httpOnly: true, secure: true, sameSite: "Lax" as const, path: "/", maxAge };
-}
 
 app.use("/api/*", async (c, next) => {
   c.header("Cache-Control", "no-store");
@@ -56,43 +52,9 @@ app.post("/api/laws/find", async (c) => {
   }
 });
 
-app.get("/api/auth/status", (c) => c.json({ enabled: Boolean(c.env.AUTH_SECRET && c.env.DB), registration_open: c.env.REGISTRATION_OPEN === "true" }));
-
-app.post("/api/auth/register", async (c) => {
-  try {
-    const body = await c.req.json<{ email?: string; password?: string; invite_code?: string }>();
-    if (!body.email || !body.password) throw new AppError("email and password are required.", 400, "validation_error");
-    const session = await register(c.env, body.email, body.password, body.invite_code);
-    setCookie(c, "glmc_session", session.token, sessionOptions(session.maxAge));
-    return c.json({ user: session.user }, 201);
-  } catch (error) {
-    const result = jsonError(error);
-    return c.json(result.body, result.status);
-  }
-});
-
-app.post("/api/auth/login", async (c) => {
-  try {
-    const body = await c.req.json<{ email?: string; password?: string }>();
-    if (!body.email || !body.password) throw new AppError("email and password are required.", 400, "validation_error");
-    const session = await login(c.env, body.email, body.password);
-    setCookie(c, "glmc_session", session.token, sessionOptions(session.maxAge));
-    return c.json({ user: session.user });
-  } catch (error) {
-    const result = jsonError(error);
-    return c.json(result.body, result.status);
-  }
-});
-
-app.post("/api/auth/logout", (c) => {
-  deleteCookie(c, "glmc_session", { path: "/" });
-  return c.body(null, 204);
-});
-
-app.get("/api/me", async (c) => {
-  const user = await currentUser(c.env, getCookie(c, "glmc_session"));
-  if (!user) return c.json({ error: { code: "unauthorized", message: "Sign in required." } }, 401);
-  return c.json({ user });
+app.get("/api/auth/config", (c) => {
+  const enabled = Boolean(c.env.SUPABASE_URL && c.env.SUPABASE_ANON_KEY);
+  return c.json(enabled ? { enabled, url: c.env.SUPABASE_URL, anon_key: c.env.SUPABASE_ANON_KEY } : { enabled: false });
 });
 
 app.all("/mcp", async (c) => {
@@ -103,6 +65,6 @@ app.all("/mcp", async (c) => {
   return new Response(response.body, { status: response.status, headers });
 });
 
-app.all("*", (c) => c.env.ASSETS.fetch(c.req.raw));
+app.get("*", (c) => siteAsset(c.req.path));
 
 export default app;

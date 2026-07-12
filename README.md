@@ -35,22 +35,18 @@ If one date resolves to more than one applicable expression, the response preser
 
 ```sh
 npm install
-npm run dev
+npm run check
+npm test
+npm run build
 ```
 
-The launch configuration keeps the public MCP independent of a database. When account access is activated, create a D1 database, add its binding to `wrangler.jsonc`, then apply `migrations/0001_users.sql`.
-
-For production, set `AUTH_SECRET` and optional `INVITE_CODE` with `wrangler secret put`. Registration stays closed unless `REGISTRATION_OPEN` is explicitly set to `true`, or a valid invite code is supplied.
+The public MCP deliberately has no database dependency. The optional account area uses Supabase Auth; it is enabled only when the Worker is configured with `SUPABASE_URL` and `SUPABASE_ANON_KEY`. These values are public client configuration, not service-role credentials.
 
 ## Deploy
 
-```sh
-npm run check
-npm test
-npm run deploy
-```
+`npm run deploy` bundles the Worker and uploads it directly through the Cloudflare Workers REST API. It never uses Wrangler. It requires `CLOUDFLARE_API_TOKEN` with Developer Platform → Workers Scripts → Edit and `CLOUDFLARE_ACCOUNT_ID`.
 
-To activate account login after a D1 binding exists: apply `migrations/0001_users.sql`, then set `AUTH_SECRET` and optional `INVITE_CODE` with `wrangler secret put`.
+To activate account login, create or select a dedicated Supabase project, configure its Auth providers and redirect URL, and set `SUPABASE_URL` plus `SUPABASE_ANON_KEY` as Worker bindings. Do not add a Supabase service-role key to the Worker or browser.
 
 ## Scope
 
