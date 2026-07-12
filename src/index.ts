@@ -56,6 +56,8 @@ app.post("/api/laws/find", async (c) => {
   }
 });
 
+app.get("/api/auth/status", (c) => c.json({ enabled: Boolean(c.env.AUTH_SECRET && c.env.DB), registration_open: c.env.REGISTRATION_OPEN === "true" }));
+
 app.post("/api/auth/register", async (c) => {
   try {
     const body = await c.req.json<{ email?: string; password?: string; invite_code?: string }>();
